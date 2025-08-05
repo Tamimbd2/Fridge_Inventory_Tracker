@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fridge Inventory with Product Notes</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #fff;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px 25px 30px;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    }
+
+    /* Add product section */
+    .add-product-section {
+      background: #d1f0eb;
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      box-shadow: inset 0 0 10px #1abc9c;
+    }
+
+    .add-product-section h2 {
+      margin-top: 0;
+      color: #16a085;
+      font-weight: 700;
+      font-size: 22px;
+      margin-bottom: 15px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .add-product {
+      display: flex;
+      gap: 10px;
+    }
+
+    .add-product input[type="text"] {
+      flex-grow: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid #1abc9c;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    .add-product input[type="text"]:focus {
+      border-color: #16a085;
+    }
+
+    .add-product button {
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 18px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+    }
+
+    .add-product button:hover {
+      background-color: #16a085;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #e0f7f4;
+      margin-bottom: 12px;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-size: 18px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      gap: 10px;
+    }
+
+    .item-name {
+      flex-grow: 1;
+      font-weight: 600;
+      min-width: 90px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    button.control-btn {
+      background-color: #1abc9c;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      font-size: 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+
+    button.control-btn:hover {
+      background-color: #16a085;
+    }
+
+    .count {
+      min-width: 25px;
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .note-input {
+      width: 150px;
+      padding: 6px 8px;
+      border-radius: 5px;
+      border: 1.8px solid #1abc9c;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    .note-input:focus {
+      border-color: #16a085;
+    }
+
+    /* Responsive */
+    @media(max-width: 480px) {
+      .container {
+        max-width: 95%;
+        padding: 15px;
+      }
+
+      li {
+        font-size: 16px;
+        padding: 10px 12px;
+        flex-wrap: wrap;
+      }
+
+      .controls {
+        gap: 6px;
+      }
+
+      button.control-btn {
+        font-size: 18px;
+        padding: 5px 10px;
+      }
+
+      .note-input {
+        width: 100%;
+        margin-top: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Fridge Inventory Tracker</h1>
+
+  <div class="container">
+
+    <section class="add-product-section">
+      <h2>Add New Product</h2>
+      <div class="add-product">
+        <input type="text" id="newItemInput" placeholder="Enter product name (e.g. Butter)" />
+        <button id="addItemBtn">Add</button>
+      </div>
+    </section>
+
+    <ul id="itemList">
+      <!-- Items will be rendered here -->
+    </ul>
+  </div>
+
+  <script type="module">
+    // Import Firebase SDK modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAKHuREEOaFo3IIs8hUPDB9JSqzoUMho-w",
+      authDomain: "fridge-99c78.firebaseapp.com",
+      projectId: "fridge-99c78",
+      storageBucket: "fridge-99c78.appspot.com",
+      messagingSenderId: "946871895111",
+      appId: "1:946871895111:web:ff312c069ec1027df19d62",
+      measurementId: "G-PSXLY1XHL6"
+    };
+
+    // Initialize Firebase and Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const itemList = document.getElementById('itemList');
+    const newItemInput = document.getElementById('newItemInput');
+    const addItemBtn = document.getElementById('addItemBtn');
+
+    // Create a list item element with event listeners
+    function createItemElement(id, data) {
+      const li = document.createElement('li');
+      li.dataset.id = id;
+
+      const spanName = document.createElement('span');
+      spanName.className = 'item-name';
+      spanName.textContent = data.name;
+
+      const controlsDiv = document.createElement('div');
+      controlsDiv.className = 'controls';
+
+      const minusBtn = document.createElement('button');
+      minusBtn.className = 'control-btn minus-btn';
+      minusBtn.textContent = '-';
+
+      const countSpan = document.createElement('span');
+      countSpan.className = 'count';
+      countSpan.textContent = data.count;
+
+      const plusBtn = document.createElement('button');
+      plusBtn.className = 'control-btn plus-btn';
+      plusBtn.textContent = '+';
+
+      controlsDiv.appendChild(minusBtn);
+      controlsDiv.appendChild(countSpan);
+      controlsDiv.appendChild(plusBtn);
+
+      const noteInput = document.createElement('input');
+      noteInput.type = 'text';
+      noteInput.className = 'note-input';
+      noteInput.placeholder = 'Note...';
+      noteInput.value = data.note || '';
+
+      li.appendChild(spanName);
+      li.appendChild(controlsDiv);
+      li.appendChild(noteInput);
+
+      // Event: plus button
+      plusBtn.addEventListener('click', () => {
+        const newCount = parseInt(countSpan.textContent) + 1;
+        countSpan.textContent = newCount;
+        updateItem(id, { count: newCount });
+      });
+
+      // Event: minus button
+      minusBtn.addEventListener('click', () => {
+        const currentCount = parseInt(countSpan.textContent);
+        if (currentCount > 0) {
+          const newCount = currentCount - 1;
+          countSpan.textContent = newCount;
+          updateItem(id, { count: newCount });
+        }
+      });
+
+      // Event: note input change (debounced)
+      let noteTimeout;
+      noteInput.addEventListener('input', () => {
+        clearTimeout(noteTimeout);
+        noteTimeout = setTimeout(() => {
+          updateItem(id, { note: noteInput.value });
+        }, 500);
+      });
+
+      return li;
+    }
+
+    // Add a new item document in Firestore
+    async function addItem(name) {
+      try {
+        await addDoc(collection(db, 'fridgeItems'), {
+          name,
+          count: 0,
+          note: ''
+        });
+      } catch (error) {
+        console.error('Error adding item:', error);
+      }
+    }
+
+    // Update an existing item document
+    async function updateItem(id, data) {
+      try {
+        const itemRef = doc(db, 'fridgeItems', id);
+        await updateDoc(itemRef, data);
+      } catch (error) {
+        console.error('Error updating item:', error);
+      }
+    }
+
+    // Clear and render all items in the list
+    function renderItems(items) {
+      itemList.innerHTML = '';
+      items.forEach(({ id, data }) => {
+        const li = createItemElement(id, data);
+        itemList.appendChild(li);
+      });
+    }
+
+    // Real-time listener for Firestore collection 'fridgeItems'
+    const q = query(collection(db, 'fridgeItems'), orderBy('name'));
+    onSnapshot(q, (querySnapshot) => {
+      const items = [];
+      querySnapshot.forEach(docSnap => {
+        items.push({ id: docSnap.id, data: docSnap.data() });
+      });
+      renderItems(items);
+    });
+
+    // Add product button handler
+    addItemBtn.addEventListener('click', () => {
+      const name = newItemInput.value.trim();
+      if (!name) {
+        alert('Please enter a product name');
+        return;
+      }
+      // Check for duplicates in UI to prevent redundant adds
+      const existingNames = Array.from(itemList.querySelectorAll('.item-name')).map(e => e.textContent.toLowerCase());
+      if (existingNames.includes(name.toLowerCase())) {
+        alert('Product already exists!');
+        newItemInput.value = '';
+        return;
+      }
+      addItem(name);
+      newItemInput.value = '';
+    });
+
+    // Enter key triggers add button
+    newItemInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        addItemBtn.click();
+      }
+    });
+  </script>
+
+</body>
+</html>
