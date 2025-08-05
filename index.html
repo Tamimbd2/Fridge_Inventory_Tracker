@@ -29,7 +29,6 @@
       box-shadow: 0 8px 15px rgba(0,0,0,0.2);
     }
 
-    /* Add product section */
     .add-product-section {
       background: #d1f0eb;
       padding: 15px 20px;
@@ -150,7 +149,6 @@
       border-color: #16a085;
     }
 
-    /* Responsive */
     @media(max-width: 480px) {
       .container {
         max-width: 95%;
@@ -180,11 +178,8 @@
   </style>
 </head>
 <body>
-
   <h1>Fridge Inventory Tracker</h1>
-
   <div class="container">
-
     <section class="add-product-section">
       <h2>Add New Product</h2>
       <div class="add-product">
@@ -192,18 +187,12 @@
         <button id="addItemBtn">Add</button>
       </div>
     </section>
-
-    <ul id="itemList">
-      <!-- Items will be rendered here -->
-    </ul>
+    <ul id="itemList"></ul>
   </div>
-
   <script type="module">
-    // Import Firebase SDK modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAKHuREEOaFo3IIs8hUPDB9JSqzoUMho-w",
       authDomain: "fridge-99c78.firebaseapp.com",
@@ -214,7 +203,6 @@
       measurementId: "G-PSXLY1XHL6"
     };
 
-    // Initialize Firebase and Firestore
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -222,7 +210,6 @@
     const newItemInput = document.getElementById('newItemInput');
     const addItemBtn = document.getElementById('addItemBtn');
 
-    // Create a list item element with event listeners
     function createItemElement(id, data) {
       const li = document.createElement('li');
       li.dataset.id = id;
@@ -260,14 +247,12 @@
       li.appendChild(controlsDiv);
       li.appendChild(noteInput);
 
-      // Event: plus button
       plusBtn.addEventListener('click', () => {
         const newCount = parseInt(countSpan.textContent) + 1;
         countSpan.textContent = newCount;
         updateItem(id, { count: newCount });
       });
 
-      // Event: minus button
       minusBtn.addEventListener('click', () => {
         const currentCount = parseInt(countSpan.textContent);
         if (currentCount > 0) {
@@ -277,7 +262,6 @@
         }
       });
 
-      // Event: note input change (debounced)
       let noteTimeout;
       noteInput.addEventListener('input', () => {
         clearTimeout(noteTimeout);
@@ -289,7 +273,6 @@
       return li;
     }
 
-    // Add a new item document in Firestore
     async function addItem(name) {
       try {
         await addDoc(collection(db, 'fridgeItems'), {
@@ -302,7 +285,6 @@
       }
     }
 
-    // Update an existing item document
     async function updateItem(id, data) {
       try {
         const itemRef = doc(db, 'fridgeItems', id);
@@ -312,7 +294,6 @@
       }
     }
 
-    // Clear and render all items in the list
     function renderItems(items) {
       itemList.innerHTML = '';
       items.forEach(({ id, data }) => {
@@ -321,7 +302,6 @@
       });
     }
 
-    // Real-time listener for Firestore collection 'fridgeItems'
     const q = query(collection(db, 'fridgeItems'), orderBy('name'));
     onSnapshot(q, (querySnapshot) => {
       const items = [];
@@ -331,14 +311,12 @@
       renderItems(items);
     });
 
-    // Add product button handler
     addItemBtn.addEventListener('click', () => {
       const name = newItemInput.value.trim();
       if (!name) {
         alert('Please enter a product name');
         return;
       }
-      // Check for duplicates in UI to prevent redundant adds
       const existingNames = Array.from(itemList.querySelectorAll('.item-name')).map(e => e.textContent.toLowerCase());
       if (existingNames.includes(name.toLowerCase())) {
         alert('Product already exists!');
@@ -349,13 +327,11 @@
       newItemInput.value = '';
     });
 
-    // Enter key triggers add button
     newItemInput.addEventListener('keyup', (e) => {
       if (e.key === 'Enter') {
         addItemBtn.click();
       }
     });
   </script>
-
 </body>
 </html>
